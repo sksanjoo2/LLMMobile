@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shield with a chat bubble inside. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M54,26 L76,34 L76,52 C76,66 66,78 54,82 C42,78 32,66 32,52 L32,34 Z" />
+    <path android:fillColor="#1A237E"
+        android:pathData="M42,44 L66,44 C67.1,44 68,44.9 68,46 L68,58 C68,59.1 67.1,60 66,60 L52,60 L46,65 L46,60 L42,60 C40.9,60 40,59.1 40,58 L40,46 C40,44.9 40.9,44 42,44 Z" />
+</vector>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- No INTERNET permission here. Only the "online" flavor adds it, for the model download. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Voice input. Recognition runs with the on-device recognizer only. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Keep live meetings / call analysis running in the background, with a visible notification. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Scam Shield. No SMS permission: the OTP alarm reads the SMS app's notification via notification access. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Lets the user exempt the app from battery optimisation so background features keep running. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <!-- Android 11+ package visibility: find the phone's speech recognizer and TTS engine. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:hasFragileUserData="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="false"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.GemmaMobile"
+        tools:targetApi="31">
+
+        <!-- GPU acceleration for LiteRT-LM (optional; falls back to CPU if unavailable). -->
+        <uses-native-library android:name="libvndksupport.so" android:required="false" />
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|smallestScreenSize|density">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- "Share" a call recording from the phone's recorder / file manager into the app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/ogg" />
+            </intent-filter>
+        </activity>
+
+        <!-- Full-screen scam warning (over the lock screen and the call). -->
+        <activity
+            android:name=".ScamAlertActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:taskAffinity="com.gemmamobile.securechat.alert"
+            android:turnScreenOn="true" />
+
+        <!-- Looks only at call notifications (phone, WhatsApp, …) and SMS-app notifications (for OTPs). -->
+        <service
+            android:name=".CallGuardService"
+            android:exported="true"
+            android:label="Scam Shield call guard"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+            <!-- Only real-time (ongoing call) and normal notifications. Conversations (chats, message
+                 threads) are never requested and are hidden from the "Allowed notification types" options. -->
+            <meta-data
+                android:name="android.service.notification.default_filter_types"
+                android:value="ongoing|alerting|silent" />
+            <meta-data
+                android:name="android.service.notification.disabled_filter_types"
+                android:value="conversations" />
+        </service>
+
+        <!-- Bound by Android automatically when a call from an unknown number starts
+             (needs the "Caller ID & spam" role). Never blocks calls. -->
+        <service
+            android:name=".CallScreenGuard"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".LongCallCheckReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".BackgroundTestReceiver"
+            android:exported="false" />
+
+        <service
+            android:name=".SessionService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|dataSync" />
+    </application>
+</manifest>
